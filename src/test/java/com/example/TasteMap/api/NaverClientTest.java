@@ -20,4 +20,13 @@ class NaverClientTest {
         var result = naverClient.searchLocal(search);
         System.out.println("검색 결과 : " + result);
     }
+
+    @Test
+    public void searchImageTest() {
+        var search = new SearchImageRequest();
+        search.setQuery("감자탕");
+
+        var result = naverClient.searchImage(search);
+        System.out.println(result);
+    }
 }
