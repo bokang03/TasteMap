@@ -1,5 +1,7 @@
 package com.example.TasteMap.api;
 
+import com.example.TasteMap.api.dto.image.SearchImageRequest;
+import com.example.TasteMap.api.dto.image.SearchImageResponse;
 import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +43,30 @@ public class NaverClient {
 
         var httpEntity = new HttpEntity<>(headers);
         var responseType = new ParameterizedTypeReference<SearchLocalResponse>(){};
+
+        var responseEntity = new RestTemplate().exchange(
+                uri,
+                HttpMethod.GET,
+                httpEntity,
+                responseType
+        );
+        return responseEntity.getBody();
+    }
+
+    public SearchImageResponse searchImage(SearchImageRequest searchImageRequest){
+        var uri = UriComponentsBuilder.fromUriString(searchImageUrl)
+                .queryParams(searchImageRequest.getQuery())
+                .build()
+                .encode()
+                .toUri();
+
+        var headers = new HttpHeaders();
+        headers.add("X-Naver-Client-Id", clientId);
+        headers.add("X-Naver-Client-Secret", clientSecret);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        var httpEntity = new HttpEntity<>(headers);
+        var responseType = new ParameterizedTypeReference<SearchImageResponse>(){};
 
         var responseEntity = new RestTemplate().exchange(
                 uri,
