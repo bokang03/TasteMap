@@ -17,9 +17,9 @@ public class TasteMapService {
 
     public TasteMapDto search(String query){
 
-        var searchLocalReqest = new SearchLocalRequest();
-        searchLocalReqest.setQuery(query);
-        var searchLocalResponse = naverClient.searchLocal(searchLocalReqest);
+        var searchLocalRequest = new SearchLocalRequest();
+        searchLocalRequest.setQuery(query);
+        var searchLocalResponse = naverClient.searchLocal(searchLocalRequest);
 
         int total = 0;
         try {
