@@ -27,7 +27,7 @@ public class TasteMapController {
         return tasteMapService.add(tasteMapDto);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/find-all")
     public List<TasteMapDto> findAll(){
         return tasteMapService.findAll();
     }
