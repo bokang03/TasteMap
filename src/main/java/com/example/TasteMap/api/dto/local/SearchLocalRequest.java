@@ -10,13 +10,17 @@ import org.springframework.util.MultiValueMap;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchLocalRequest {
-
     private String query = "";
-    private int display = 1;
+    private int display = 6; // 기본 출력 개수: 6개
     private int start = 1;
     private String sort = "random";
 
-    public MultiValueMap<String,String> getQuery(){
+    public void setPage(int page) {
+        if (page < 1) page = 1;
+        this.start = (page - 1) * this.display + 1;
+    }
+
+    public MultiValueMap<String, String> getQuery() {
         var map = new LinkedMultiValueMap<String, String>();
         map.add("query", query);
         map.add("display", String.valueOf(display));
