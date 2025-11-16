@@ -74,6 +74,7 @@ public class TasteMapService {
     }
 
     public void delete(int id){
+        tasteMapRepository.deleteById(id);
     }
 
     private TasteMapEntity dtoToEntity(TasteMapDto tasteMapDto){

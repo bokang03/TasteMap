@@ -31,4 +31,9 @@ public class TasteMapController {
     public List<TasteMapDto> findAll(){
         return tasteMapService.findAll();
     }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable int id){
+        tasteMapService.delete(id);
+    }
 }
