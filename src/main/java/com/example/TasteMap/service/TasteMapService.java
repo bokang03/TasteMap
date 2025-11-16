@@ -9,6 +9,10 @@ import com.example.TasteMap.repository.TasteMapRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class TasteMapService {
@@ -17,10 +21,10 @@ public class TasteMapService {
     private final TasteMapRepository tasteMapRepository;
 
     public TasteMapDto search(String query){
-
-        var searchLocalRequest = new SearchLocalRequest();
-        searchLocalRequest.setQuery(query);
-        var searchLocalResponse = naverClient.searchLocal(searchLocalRequest);
+        // 지역검색
+        var searchLocalReqest = new SearchLocalRequest();
+        searchLocalReqest.setQuery(query);
+        var searchLocalResponse = naverClient.searchLocal(searchLocalReqest);
 
         int total = 0;
         try {
@@ -35,11 +39,13 @@ public class TasteMapService {
             var searchImageRequest = new SearchImageRequest();
             searchImageRequest.setQuery(imageQuery);
 
+            // 이미지 검색
             var searchImageResponse = naverClient.searchImage(searchImageRequest);
 
             if(searchImageResponse.getTotal() > 0){
                 var imageItem = searchImageResponse.getItems().stream().findFirst().get();
 
+                // 결과를 리턴
                 var result = new TasteMapDto();
                 result.setTitle(localItem.getTitle());
                 result.setCategory(localItem.getCategory());
@@ -60,10 +66,11 @@ public class TasteMapService {
         return entityToDto(saved);
     }
 
-    public void findAll(){
-    }
-
-    public void findById(int id){
+    public List<TasteMapDto> findAll(){
+        return tasteMapRepository.findAll()
+                .stream()
+                .map(this::entityToDto)
+                .collect(Collectors.toList());
     }
 
     public void delete(int id){
@@ -92,5 +99,4 @@ public class TasteMapService {
         dto.setImageLink(tasteMapEntity.getImageLink());
         return dto;
     }
-
 }
