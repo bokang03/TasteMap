@@ -21,7 +21,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",
                                 "/webjars/**",
-                                "/taste-map/**" // taste-map API 허용
+                                "/taste-map/**", // taste-map API 허용
+                                "/pages/main"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
