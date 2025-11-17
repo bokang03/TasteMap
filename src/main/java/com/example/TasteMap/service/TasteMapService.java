@@ -8,6 +8,7 @@ import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalResponse;
 import com.example.TasteMap.domain.TasteMapDto;
 import com.example.TasteMap.domain.TasteMapEntity;
+import com.example.TasteMap.exception.ResourceAlreadyExistsException;
 import com.example.TasteMap.repository.TasteMapRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -89,9 +90,22 @@ public class TasteMapService {
     }
 
     public TasteMapDto add(TasteMapDto dto){
+        boolean exists = tasteMapRepository.findAll()
+                .stream()
+                .anyMatch(e -> safeEquals(e.getTitle(), dto.getTitle()) && safeEquals(e.getAddress(), dto.getAddress()));
+        if (exists) {
+            throw new ResourceAlreadyExistsException("이미 저정된 음식점입니다.");
+        }
+
         var entity = dtoToEntity(dto);
         var saved = tasteMapRepository.save(entity);
         return entityToDto(saved);
+    }
+
+    private boolean safeEquals(String a, String b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.equals(b);
     }
 
     public List<TasteMapDto> findAll(){
