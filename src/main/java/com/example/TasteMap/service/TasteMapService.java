@@ -8,6 +8,7 @@ import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalResponse;
 import com.example.TasteMap.domain.TasteMapDto;
 import com.example.TasteMap.domain.TasteMapEntity;
+import com.example.TasteMap.exception.ErrorMessage;
 import com.example.TasteMap.exception.ResourceAlreadyExistsException;
 import com.example.TasteMap.repository.TasteMapRepository;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +95,7 @@ public class TasteMapService {
                 .stream()
                 .anyMatch(e -> safeEquals(e.getTitle(), dto.getTitle()) && safeEquals(e.getAddress(), dto.getAddress()));
         if (exists) {
-            throw new ResourceAlreadyExistsException("이미 저정된 음식점입니다.");
+            throw new ResourceAlreadyExistsException(ErrorMessage.INVALID_TASTE_MAP_DUPLICATE.getMessage());
         }
 
         var entity = dtoToEntity(dto);

@@ -50,7 +50,7 @@ public class NaverSearchService {
                     return;
                 }
             }
-        } catch (Exception e) {
+            } catch (Exception e) {
             // 예외 무시: 기본 이미지로 대체
         }
         itemMap.put("imageLink", "https://via.placeholder.com/600x300?text=NO+IMAGE");
