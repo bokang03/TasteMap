@@ -85,7 +85,6 @@ public class TasteMapService {
         result.setCategory(localItem.getCategory());
         result.setAddress(localItem.getAddress());
         result.setRoadAddress(localItem.getRoadAddress());
-        result.setHomePageLink(localItem.getLink());
         result.setImageLink(imageItem.getLink());
         return result;
     }
@@ -131,7 +130,6 @@ public class TasteMapService {
         entity.setCategory(tasteMapDto.getCategory());
         entity.setAddress(tasteMapDto.getAddress());
         entity.setRoadAddress(tasteMapDto.getRoadAddress());
-        entity.setHomePageLink(tasteMapDto.getHomePageLink());
         entity.setImageLink(tasteMapDto.getImageLink());
         return entity;
     }
@@ -143,7 +141,6 @@ public class TasteMapService {
         dto.setCategory(tasteMapEntity.getCategory());
         dto.setAddress(tasteMapEntity.getAddress());
         dto.setRoadAddress(tasteMapEntity.getRoadAddress());
-        dto.setHomePageLink(tasteMapEntity.getHomePageLink());
         dto.setImageLink(tasteMapEntity.getImageLink());
         return dto;
     }

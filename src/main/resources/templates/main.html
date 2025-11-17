@@ -140,7 +140,6 @@
                     <h5 class="card-title" v-text="stripTags(res.title)"></h5>
                     <p class="card-text">Category: <span v-text="stripTags(res.category)"></span></p>
                     <p class="card-text">주소: <span v-text="stripTags(res.address)"></span></p>
-                    <a :href="res.homePageLink" target="_blank" class="btn btn-sm btn-outline-primary">홈페이지</a>
                     <button class="btn btn-primary btn-sm" style="float:right" @click="addWish(res)">위시리스트 추가</button>
                 </div>
             </div>
@@ -184,7 +183,6 @@
                         <li class="list-group-item">Category : <span v-text="stripTags(wish.category)"></span></li>
                         <li class="list-group-item">주소 : <span v-text="stripTags(wish.address)"></span></li>
                         <li class="list-group-item">도로명 : <span v-text="stripTags(wish.roadAddress)"></span></li>
-                        <li class="list-group-item"><a :href="wish.homePageLink" target="_blank">홈페이지</a></li>
                     </ul>
                     <div>
                         <button @click="deleteWish(wish.id)" type="button" class="btn btn-danger btn-lg" style="width:100%;">위시리스트 삭제</button>

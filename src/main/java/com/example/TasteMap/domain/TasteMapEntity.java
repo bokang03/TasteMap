@@ -12,6 +12,5 @@ public class TasteMapEntity extends MemoryDbEntity {
     private String category;
     private String address;
     private String roadAddress;
-    private String homePageLink;
     private String imageLink;
 }
