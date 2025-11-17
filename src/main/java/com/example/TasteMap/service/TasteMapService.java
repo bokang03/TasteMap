@@ -91,16 +91,20 @@ public class TasteMapService {
     }
 
     public TasteMapDto add(TasteMapDto dto){
+        ensureNotDuplicate(dto);
+
+        var entity = dtoToEntity(dto);
+        var saved = tasteMapRepository.save(entity);
+        return entityToDto(saved);
+    }
+
+    private void ensureNotDuplicate(TasteMapDto dto) {
         boolean exists = tasteMapRepository.findAll()
                 .stream()
                 .anyMatch(e -> safeEquals(e.getTitle(), dto.getTitle()) && safeEquals(e.getAddress(), dto.getAddress()));
         if (exists) {
             throw new ResourceAlreadyExistsException(ErrorMessage.INVALID_TASTE_MAP_DUPLICATE.getMessage());
         }
-
-        var entity = dtoToEntity(dto);
-        var saved = tasteMapRepository.save(entity);
-        return entityToDto(saved);
     }
 
     private boolean safeEquals(String a, String b) {

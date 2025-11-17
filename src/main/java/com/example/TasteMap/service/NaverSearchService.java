@@ -21,39 +21,55 @@ public class NaverSearchService {
 
     private final NaverClient naverClient;
     private final ObjectMapper objectMapper;
+    private static final String PLACEHOLDER = "https://via.placeholder.com/600x300?text=NO+IMAGE";
 
     public List<?> safeGetItems(SearchLocalResponse resp) {
         return resp != null && resp.getItems() != null ? resp.getItems() : Collections.emptyList();
     }
 
-    public void collectFromItems(List<?> items, List<Map<String, Object>> results, int desired) {
-        for (Object item : items) {
-            if (results.size() >= desired) break;
-            Map<String, Object> map = objectMapper.convertValue(item, new TypeReference<Map<String, Object>>() {});
-            attachImageLink(map);
-            results.add(map);
+    public Map<String, Object> convertToMap(Object item) {
+        return objectMapper.convertValue(item, new TypeReference<Map<String, Object>>() {});
+    }
+
+    public String resolveTitle(Map<String, Object> itemMap) {
+        Object titleObj = itemMap.get("title");
+        return titleObj != null ? stripHtml(titleObj.toString()) : "";
+    }
+
+    public String fetchImageLinkForTitle(String title) {
+        if (title == null || title.isBlank()) return null;
+        try {
+            SearchImageRequest imgReq = new SearchImageRequest();
+            imgReq.setQuery(title);
+            imgReq.setDisplay(1);
+            SearchImageResponse imgResp = naverClient.searchImage(imgReq);
+            if (imgResp != null && imgResp.getItems() != null && !imgResp.getItems().isEmpty()) {
+                var imgItem = imgResp.getItems().get(0);
+                return imgItem.getLink() != null ? imgItem.getLink() : imgItem.getThumbnail();
+            }
+        } catch (Exception e) {
+            // 무시하고 null 반환
         }
+        return null;
     }
 
     public void attachImageLink(Map<String, Object> itemMap) {
-        try {
-            Object titleObj = itemMap.get("title");
-            String title = titleObj != null ? stripHtml(titleObj.toString()) : "";
-            if (!title.isBlank()) {
-                SearchImageRequest imgReq = new SearchImageRequest();
-                imgReq.setQuery(title);
-                imgReq.setDisplay(1);
-                SearchImageResponse imgResp = naverClient.searchImage(imgReq);
-                if (imgResp != null && imgResp.getItems() != null && !imgResp.getItems().isEmpty()) {
-                    var imgItem = imgResp.getItems().get(0);
-                    itemMap.put("imageLink", imgItem.getLink() != null ? imgItem.getLink() : imgItem.getThumbnail());
-                    return;
-                }
-            }
-            } catch (Exception e) {
-            // 예외 무시: 기본 이미지로 대체
+        String title = resolveTitle(itemMap);
+        String link = fetchImageLinkForTitle(title);
+        if (link != null) {
+            itemMap.put("imageLink", link);
+        } else {
+            itemMap.put("imageLink", PLACEHOLDER);
         }
-        itemMap.put("imageLink", "https://via.placeholder.com/600x300?text=NO+IMAGE");
+    }
+
+    public void collectFromItems(List<?> items, List<Map<String, Object>> results, int desired) {
+        for (Object item : items) {
+            if (results.size() >= desired) break;
+            Map<String, Object> map = convertToMap(item);
+            attachImageLink(map);
+            results.add(map);
+        }
     }
 
     private String stripHtml(String s) {
