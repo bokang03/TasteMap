@@ -5,14 +5,16 @@ import com.example.TasteMap.api.dto.image.SearchImageRequest;
 import com.example.TasteMap.api.dto.image.SearchImageResponse;
 import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalResponse;
+import com.example.TasteMap.exception.ErrorMessage;
+import com.example.TasteMap.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -23,12 +25,14 @@ public class NaverSearchService {
     private static final String PLACEHOLDER = "https://via.placeholder.com/600x300?text=NO+IMAGE";
 
     public List<?> safeGetItems(SearchLocalResponse resp) {
-        if (resp == null || resp.getItems() == null || resp.getItems().isEmpty()) {
-            throw new com.example.TasteMap.exception.ResourceNotFoundException(
-                    com.example.TasteMap.exception.ErrorMessage.NO_SEARCH_RESULT.getMessage()
-            );
+        if (resp == null) {
+            throw new ResourceNotFoundException(ErrorMessage.NO_SEARCH_RESULT.getMessage());
         }
-        return resp.getItems();
+        var items = resp.getItems();
+        if (items == null || items.isEmpty()) {
+            throw new ResourceNotFoundException(ErrorMessage.NO_SEARCH_RESULT.getMessage());
+        }
+        return items;
     }
 
     public Map<String, Object> convertToMap(Object item) {
@@ -37,34 +41,36 @@ public class NaverSearchService {
 
     public String resolveTitle(Map<String, Object> itemMap) {
         Object titleObj = itemMap.get("title");
-        return titleObj != null ? stripHtml(titleObj.toString()) : "";
+        if (titleObj == null) return "";
+        return stripHtml(titleObj.toString());
     }
 
     public String fetchImageLinkForTitle(String title) {
         if (title == null || title.isBlank()) return null;
         try {
-            SearchImageRequest imgReq = new SearchImageRequest();
-            imgReq.setQuery(title);
-            imgReq.setDisplay(1);
-            SearchImageResponse imgResp = naverClient.searchImage(imgReq);
-            if (imgResp != null && imgResp.getItems() != null && !imgResp.getItems().isEmpty()) {
-                var imgItem = imgResp.getItems().get(0);
-                return imgItem.getLink() != null ? imgItem.getLink() : imgItem.getThumbnail();
-            }
+            SearchImageRequest req = new SearchImageRequest();
+            req.setQuery(title);
+            req.setDisplay(1);
+            SearchImageResponse resp = naverClient.searchImage(req);
+            if (resp == null) return null;
+            var items = resp.getItems();
+            if (items == null || items.isEmpty()) return null;
+            var imgItem = items.get(0);
+            if (imgItem.getLink() != null) return imgItem.getLink();
+            return imgItem.getThumbnail();
         } catch (Exception e) {
-            // 무시하고 null 반환
+            return null;
         }
-        return null;
     }
 
     public void attachImageLink(Map<String, Object> itemMap) {
         String title = resolveTitle(itemMap);
         String link = fetchImageLinkForTitle(title);
-        if (link != null) {
-            itemMap.put("imageLink", link);
-        } else {
+        if (link == null) {
             itemMap.put("imageLink", PLACEHOLDER);
+            return;
         }
+        itemMap.put("imageLink", link);
     }
 
     public void collectFromItems(List<?> items, List<Map<String, Object>> results, int desired) {
@@ -77,33 +83,46 @@ public class NaverSearchService {
     }
 
     private String stripHtml(String s) {
-        return s == null ? "" : s.replaceAll("\\<.*?\\>", "").trim();
+        if (s == null) return "";
+        return s.replaceAll("\\<.*?\\>", "").trim();
     }
 
     public List<Map<String, Object>> searchLocalMaps(String query, int page, int desired) {
-        var req = new SearchLocalRequest();
-        req.setQuery(query);
-        req.setPage(page);
-        SearchLocalResponse resp = naverClient.searchLocal(req);
-
-        List<?> items = safeGetItems(resp);
+        var req = createLocalRequest(query, page);
         List<Map<String, Object>> results = new ArrayList<>();
-
-        collectFromItems(items, results, desired);
+        boolean hasAny = fetchAndCollect(req, results, desired);
+        if (!hasAny) return results;
 
         int nextStart = req.getStart() + req.getDisplay();
         while (results.size() < desired) {
-            SearchLocalRequest nextReq = new SearchLocalRequest();
-            nextReq.setQuery(query);
-            nextReq.setStart(nextStart);
-            nextReq.setDisplay(desired - results.size());
-            SearchLocalResponse nextResp = naverClient.searchLocal(nextReq);
-            List<?> nextItems = safeGetItems(nextResp);
-            if (nextItems.isEmpty()) break;
-            collectFromItems(nextItems, results, desired);
+            var nextReq = createLocalRequestWithStart(query, nextStart, desired - results.size());
+            boolean ok = fetchAndCollect(nextReq, results, desired);
+            if (!ok) break;
             nextStart += nextReq.getDisplay();
         }
-
         return results;
+    }
+
+    private SearchLocalRequest createLocalRequest(String query, int page){
+        var req = new SearchLocalRequest();
+        req.setQuery(query);
+        req.setPage(page);
+        return req;
+    }
+
+    private SearchLocalRequest createLocalRequestWithStart(String query, int start, int display){
+        var req = new SearchLocalRequest();
+        req.setQuery(query);
+        req.setStart(start);
+        req.setDisplay(display);
+        return req;
+    }
+
+    private boolean fetchAndCollect(SearchLocalRequest req, List<Map<String, Object>> results, int desired) {
+        SearchLocalResponse resp = naverClient.searchLocal(req);
+        List<?> items = safeGetItems(resp);
+        if (items == null || items.isEmpty()) return false;
+        collectFromItems(items, results, desired);
+        return true;
     }
 }
