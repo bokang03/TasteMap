@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -24,7 +23,12 @@ public class NaverSearchService {
     private static final String PLACEHOLDER = "https://via.placeholder.com/600x300?text=NO+IMAGE";
 
     public List<?> safeGetItems(SearchLocalResponse resp) {
-        return resp != null && resp.getItems() != null ? resp.getItems() : Collections.emptyList();
+        if (resp == null || resp.getItems() == null || resp.getItems().isEmpty()) {
+            throw new com.example.TasteMap.exception.ResourceNotFoundException(
+                    com.example.TasteMap.exception.ErrorMessage.NO_SEARCH_RESULT.getMessage()
+            );
+        }
+        return resp.getItems();
     }
 
     public Map<String, Object> convertToMap(Object item) {
