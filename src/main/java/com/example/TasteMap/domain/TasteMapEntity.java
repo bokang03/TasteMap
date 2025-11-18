@@ -7,11 +7,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class TasteMapEntity extends MemoryDbEntity {
     private String title;
     private String category;
     private String address;
     private String roadAddress;
-    private String homePageLink;
     private String imageLink;
 }

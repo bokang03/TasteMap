@@ -8,7 +8,6 @@ import org.springframework.util.MultiValueMap;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class SearchLocalRequest {
     private String query = "";
     private int display = 6; // 기본 출력 개수: 6개

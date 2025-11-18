@@ -30,51 +30,29 @@ public class NaverClient {
     private String searchImageUrl;
 
     public SearchLocalResponse searchLocal(SearchLocalRequest searchLocalRequest){
-        var uri = UriComponentsBuilder.fromUriString(searchLocalUrl)
-                .queryParams(searchLocalRequest.getQuery())
-                .build()
-                .encode()
-                .toUri();
-
-        var headers = new HttpHeaders();
-        headers.add("X-Naver-Client-Id", clientId);
-        headers.add("X-Naver-Client-Secret", clientSecret);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        var httpEntity = new HttpEntity<>(headers);
-        var responseType = new ParameterizedTypeReference<SearchLocalResponse>(){};
-
-        var responseEntity = new RestTemplate().exchange(
-                uri,
-                HttpMethod.GET,
-                httpEntity,
-                responseType
-        );
-        return responseEntity.getBody();
+        var builder = UriComponentsBuilder.fromUriString(searchLocalUrl)
+                .queryParams(searchLocalRequest.getQuery());
+        return getForResponse(builder, new ParameterizedTypeReference<SearchLocalResponse>(){});
     }
 
     public SearchImageResponse searchImage(SearchImageRequest searchImageRequest){
-        var uri = UriComponentsBuilder.fromUriString(searchImageUrl)
-                .queryParams(searchImageRequest.getQuery())
-                .build()
-                .encode()
-                .toUri();
+        var builder = UriComponentsBuilder.fromUriString(searchImageUrl)
+                .queryParams(searchImageRequest.getQuery());
+        return getForResponse(builder, new ParameterizedTypeReference<SearchImageResponse>(){});
+    }
 
+    private HttpHeaders buildHeaders() {
         var headers = new HttpHeaders();
         headers.add("X-Naver-Client-Id", clientId);
         headers.add("X-Naver-Client-Secret", clientSecret);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
 
-        var httpEntity = new HttpEntity<>(headers);
-        var responseType = new ParameterizedTypeReference<SearchImageResponse>(){};
-
-        var responseEntity = new RestTemplate().exchange(
-                uri,
-                HttpMethod.GET,
-                httpEntity,
-                responseType
-        );
+    private <T> T getForResponse(UriComponentsBuilder builder, ParameterizedTypeReference<T> responseType) {
+        var uri = builder.build().encode().toUri();
+        var httpEntity = new HttpEntity<>(buildHeaders());
+        var responseEntity = new RestTemplate().exchange(uri, HttpMethod.GET, httpEntity, responseType);
         return responseEntity.getBody();
     }
 }
-
