@@ -11,41 +11,49 @@ public class MemoryDbRepository<T extends MemoryDbEntity> implements IfsMemoryDb
 
     @Override
     public Optional<T> findById(int id) {
-        return db.stream().filter(it -> it.getId() == id).findFirst();
+        return db.stream()
+                .filter(it -> Integer.valueOf(id).equals(it.getId()))
+                .findFirst();
     }
 
     @Override
     public T save(T entity) {
-        var optionalEntity = db.stream().filter(it -> it.getId() == entity.getId()).findFirst();
-
-        if(optionalEntity.isEmpty()){
-            // db 에 데이터가 없는 경우
+        if (entity.getId() == null) {
             id++;
             entity.setId(id);
             db.add(entity);
             return entity;
+        }
 
-        }else{
-            // db 에 이미 데이터가 있는 경우
-            var preId = optionalEntity.get().getId();
-            entity.setId(preId);
+        var optionalEntity = db.stream()
+                .filter(it -> it.getId() != null && it.getId().equals(entity.getId()))
+                .findFirst();
 
-            deleteById(preId);
+        if (optionalEntity.isEmpty()) {
+            id++;
+            entity.setId(id);
             db.add(entity);
             return entity;
         }
+
+        var preId = optionalEntity.get().getId();
+        entity.setId(preId);
+        deleteById(preId);
+        db.add(entity);
+        return entity;
     }
 
     @Override
     public void deleteById(int id) {
-        var optionalEntity = db.stream().filter(it -> it.getId() == id).findFirst();
-        if(optionalEntity.isPresent()){
-            db.remove(optionalEntity.get());
-        }
+        var optionalEntity = db.stream()
+                .filter(it -> Integer.valueOf(id).equals(it.getId()))
+                .findFirst();
+        if (optionalEntity.isEmpty()) return;
+        db.remove(optionalEntity.get());
     }
 
     @Override
     public List<T> findAll() {
-        return db;
+        return new ArrayList<>(db);
     }
 }
