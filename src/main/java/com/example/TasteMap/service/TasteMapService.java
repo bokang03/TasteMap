@@ -1,6 +1,8 @@
 package com.example.TasteMap.service;
 
 import com.example.TasteMap.api.NaverClient;
+import com.example.TasteMap.api.dto.image.SearchImageRequest;
+import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.domain.TasteMapDto;
 import com.example.TasteMap.domain.TasteMapEntity;
 import com.example.TasteMap.exception.ErrorMessage;
@@ -19,9 +21,46 @@ public class TasteMapService {
     private final NaverClient naverClient;
     private final TasteMapRepository tasteMapRepository;
 
+    public List<TasteMapDto> search(String query, int page){
+        var searchLocalReq = new SearchLocalRequest();
+        searchLocalReq.setQuery(query);
+        searchLocalReq.setDisplay(100);
+        searchLocalReq.setPage(page);
+
+        var searchLocalRes = naverClient.searchLocal(searchLocalReq);
+        if (searchLocalRes == null || searchLocalRes.getTotal() <= 0 || searchLocalRes.getItems() == null) {
+            return List.of();
+        }
+
+        return searchLocalRes.getItems().stream()
+                .limit(100)
+                .map(localItem -> {
+                    var dto = new TasteMapDto();
+                    dto.setTitle(localItem.getTitle());
+                    dto.setCategory(localItem.getCategory());
+                    dto.setAddress(localItem.getAddress());
+                    dto.setRoadAddress(localItem.getRoadAddress());
+
+                    try {
+                        var imageQuery = localItem.getTitle().replaceAll("<[^>]*>", "");
+                        var searchImageReq = new SearchImageRequest();
+                        searchImageReq.setQuery(imageQuery);
+                        searchImageReq.setDisplay(1);
+
+                        var searchImageRes = naverClient.searchImage(searchImageReq);
+                        if (searchImageRes != null && searchImageRes.getTotal() > 0 && searchImageRes.getItems() != null && !searchImageRes.getItems().isEmpty()) {
+                            dto.setImageLink(searchImageRes.getItems().get(0).getLink());
+                        }
+                    } catch (Exception ignored) {
+                    }
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
     public TasteMapDto add(TasteMapDto dto){
         ensureNotDuplicate(dto);
-
         var entity = dtoToEntity(dto);
         var saved = tasteMapRepository.save(entity);
         return entityToDto(saved);
