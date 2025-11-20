@@ -21,43 +21,53 @@ public class TasteMapService {
     private final NaverClient naverClient;
     private final TasteMapRepository tasteMapRepository;
 
-    public List<TasteMapDto> search(String query, int page){
-        var searchLocalReq = new SearchLocalRequest();
-        searchLocalReq.setQuery(query);
-        searchLocalReq.setDisplay(100);
-        searchLocalReq.setPage(page);
+    public List<TasteMapDto> search(String query, int startPage){
+        final int MAX_RESULTS = 100;
+        final int PER_REQUEST = 5; // 네이버가 실제로 5개만 반환하는 경우에 맞춤
+        var results = new java.util.ArrayList<TasteMapDto>();
+        int page = Math.max(1, startPage);
 
-        var searchLocalRes = naverClient.searchLocal(searchLocalReq);
-        if (searchLocalRes == null || searchLocalRes.getTotal() <= 0 || searchLocalRes.getItems() == null) {
-            return List.of();
+        while (results.size() < MAX_RESULTS) {
+            var req = new SearchLocalRequest();
+            req.setQuery(query);
+            req.setDisplay(PER_REQUEST);
+            req.setPage(page);
+
+            var res = naverClient.searchLocal(req);
+            if (res == null || res.getTotal() <= 0 || res.getItems() == null || res.getItems().isEmpty()) break;
+
+            for (var localItem : res.getItems()) {
+                var dto = new TasteMapDto();
+                dto.setTitle(localItem.getTitle());
+                dto.setCategory(localItem.getCategory());
+                dto.setAddress(localItem.getAddress());
+                dto.setRoadAddress(localItem.getRoadAddress());
+
+                try {
+                    var imageQuery = localItem.getTitle().replaceAll("<[^>]*>", "");
+                    var imgReq = new SearchImageRequest();
+                    imgReq.setQuery(imageQuery);
+                    imgReq.setDisplay(1);
+
+                    var imgRes = naverClient.searchImage(imgReq);
+                    if (imgRes != null && imgRes.getTotal() > 0 && imgRes.getItems() != null && !imgRes.getItems().isEmpty()) {
+                        dto.setImageLink(imgRes.getItems().get(0).getLink());
+                    }
+                } catch (Exception ignored) { }
+
+                results.add(dto);
+                if (results.size() >= MAX_RESULTS) break;
+            }
+
+            if (res.getItems().size() < PER_REQUEST) break; // 마지막 페이지 도달
+            if (results.size() >= res.getTotal()) break; // 전체 결과 수 도달
+            page++;
         }
 
-        return searchLocalRes.getItems().stream()
-                .limit(100)
-                .map(localItem -> {
-                    var dto = new TasteMapDto();
-                    dto.setTitle(localItem.getTitle());
-                    dto.setCategory(localItem.getCategory());
-                    dto.setAddress(localItem.getAddress());
-                    dto.setRoadAddress(localItem.getRoadAddress());
-
-                    try {
-                        var imageQuery = localItem.getTitle().replaceAll("<[^>]*>", "");
-                        var searchImageReq = new SearchImageRequest();
-                        searchImageReq.setQuery(imageQuery);
-                        searchImageReq.setDisplay(1);
-
-                        var searchImageRes = naverClient.searchImage(searchImageReq);
-                        if (searchImageRes != null && searchImageRes.getTotal() > 0 && searchImageRes.getItems() != null && !searchImageRes.getItems().isEmpty()) {
-                            dto.setImageLink(searchImageRes.getItems().get(0).getLink());
-                        }
-                    } catch (Exception ignored) {
-                    }
-
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        return results;
     }
+
+
 
     public TasteMapDto add(TasteMapDto dto){
         ensureNotDuplicate(dto);

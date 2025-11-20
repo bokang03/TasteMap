@@ -10,7 +10,7 @@ import org.springframework.util.MultiValueMap;
 @NoArgsConstructor
 public class SearchLocalRequest {
     private String query = "";
-    private int display = 6; // 기본 출력 개수: 6개
+    private int display = 5;
     private int start = 1;
     private String sort = "random";
 
