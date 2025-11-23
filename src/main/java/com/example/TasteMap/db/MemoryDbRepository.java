@@ -18,25 +18,32 @@ public class MemoryDbRepository<T extends MemoryDbEntity> implements IfsMemoryDb
 
     @Override
     public T save(T entity) {
-        if (entity.getId() == null) {
-            id++;
-            entity.setId(id);
-            db.add(entity);
-            return entity;
-        }
+        if (isNew(entity)) return createNew(entity);
 
-        var optionalEntity = db.stream()
+        var existing = findByEntityId(entity);
+        return existing
+                .map(e -> replaceExisting(e.getId(), entity))
+                .orElseGet(() -> createNew(entity));
+    }
+
+    private boolean isNew(T entity) {
+        return entity.getId() == null;
+    }
+
+    private Optional<T> findByEntityId(T entity) {
+        return db.stream()
                 .filter(it -> it.getId() != null && it.getId().equals(entity.getId()))
                 .findFirst();
+    }
 
-        if (optionalEntity.isEmpty()) {
-            id++;
-            entity.setId(id);
-            db.add(entity);
-            return entity;
-        }
+    private T createNew(T entity) {
+        id++;
+        entity.setId(id);
+        db.add(entity);
+        return entity;
+    }
 
-        var preId = optionalEntity.get().getId();
+    private T replaceExisting(Integer preId, T entity) {
         entity.setId(preId);
         deleteById(preId);
         db.add(entity);
