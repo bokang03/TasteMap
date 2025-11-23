@@ -2,10 +2,14 @@ package com.example.TasteMap.service;
 
 import com.example.TasteMap.api.NaverClient;
 import com.example.TasteMap.api.dto.image.SearchImageRequest;
+import com.example.TasteMap.api.dto.image.SearchImageResponse;
+import com.example.TasteMap.api.dto.local.SearchLocalItem;
 import com.example.TasteMap.api.dto.local.SearchLocalRequest;
+import com.example.TasteMap.api.dto.local.SearchLocalResponse;
 import com.example.TasteMap.domain.TasteMapDto;
 import com.example.TasteMap.domain.TasteMapEntity;
 import com.example.TasteMap.exception.ErrorMessage;
+import com.example.TasteMap.exception.ResourceNotFoundException;
 import com.example.TasteMap.exception.ResourceAlreadyExistsException;
 import com.example.TasteMap.repository.TasteMapRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,53 +25,67 @@ public class TasteMapService {
     private final NaverClient naverClient;
     private final TasteMapRepository tasteMapRepository;
 
-    public List<TasteMapDto> search(String query, int startPage){
-        final int MAX_RESULTS = 100;
-        final int PER_REQUEST = 5; // 네이버가 실제로 5개만 반환하는 경우에 맞춤
-        var results = new java.util.ArrayList<TasteMapDto>();
-        int page = Math.max(1, startPage);
-
-        while (results.size() < MAX_RESULTS) {
-            var req = new SearchLocalRequest();
-            req.setQuery(query);
-            req.setDisplay(PER_REQUEST);
-            req.setPage(page);
-
-            var res = naverClient.searchLocal(req);
-            if (res == null || res.getTotal() <= 0 || res.getItems() == null || res.getItems().isEmpty()) break;
-
-            for (var localItem : res.getItems()) {
-                var dto = new TasteMapDto();
-                dto.setTitle(localItem.getTitle());
-                dto.setCategory(localItem.getCategory());
-                dto.setAddress(localItem.getAddress());
-                dto.setRoadAddress(localItem.getRoadAddress());
-
-                try {
-                    var imageQuery = localItem.getTitle().replaceAll("<[^>]*>", "");
-                    var imgReq = new SearchImageRequest();
-                    imgReq.setQuery(imageQuery);
-                    imgReq.setDisplay(1);
-
-                    var imgRes = naverClient.searchImage(imgReq);
-                    if (imgRes != null && imgRes.getTotal() > 0 && imgRes.getItems() != null && !imgRes.getItems().isEmpty()) {
-                        dto.setImageLink(imgRes.getItems().get(0).getLink());
-                    }
-                } catch (Exception ignored) { }
-
-                results.add(dto);
-                if (results.size() >= MAX_RESULTS) break;
-            }
-
-            if (res.getItems().size() < PER_REQUEST) break; // 마지막 페이지 도달
-            if (results.size() >= res.getTotal()) break; // 전체 결과 수 도달
-            page++;
-        }
-
+    public List<TasteMapDto> search(String query, int startPage) {
+        if (isBlank(query)) return java.util.List.of();
+        var results = runSearchWithPaging(query, startPage);
+        if (results.isEmpty()) throw new ResourceNotFoundException(ErrorMessage.NO_SEARCH_RESULT.getMessage());
         return results;
     }
 
+    private java.util.ArrayList<TasteMapDto> runSearchWithPaging(String q, int startPage) {
+        final int MAX = 100, PER = 5;
+        var results = new java.util.ArrayList<TasteMapDto>();
+        int page = Math.max(1, startPage);
+        while (results.size() < MAX) {
+            var req = buildLocalRequest(q, PER, page); var res = callLocalSearch(req);
+            if (noLocalResults(res)) break;
+            for (var item : res.getItems()) {
+                results.add(mapLocalToDto(item)); if (results.size() >= MAX) break;
+            }
+            if (res.getItems().size() < PER) break; if (results.size() >= res.getTotal()) break;
+            page++;
+        }
+        return results;
+    }
 
+    private SearchLocalRequest buildLocalRequest(String query, int per, int page) {
+        var req = new SearchLocalRequest();
+        req.setQuery(query);
+        req.setDisplay(per);
+        req.setPage(page);
+        return req;
+    }
+
+    private SearchLocalResponse callLocalSearch(SearchLocalRequest req) {
+        return naverClient.searchLocal(req);
+    }
+
+    private boolean noLocalResults(SearchLocalResponse res) {
+        return res == null || res.getTotal() <= 0 || res.getItems() == null || res.getItems().isEmpty();
+    }
+
+    private TasteMapDto mapLocalToDto(SearchLocalItem item) {
+        var dto = new TasteMapDto();
+        dto.setTitle(item.getTitle());
+        dto.setCategory(item.getCategory());
+        dto.setAddress(item.getAddress());
+        dto.setRoadAddress(item.getRoadAddress());
+        try {
+            var link = fetchImageLink(item.getTitle().replaceAll("<[^>]*>", ""));
+            if (link != null) dto.setImageLink(link);
+        } catch (Exception ignored) { }
+        return dto;
+    }
+
+    private String fetchImageLink(String title) {
+        if (isBlank(title)) return null;
+        var req = new SearchImageRequest(); req.setQuery(title); req.setDisplay(1);
+        var res = naverClient.searchImage(req);
+        if (res == null || res.getTotal() <= 0 || res.getItems() == null || res.getItems().isEmpty()) return null;
+        return res.getItems().get(0).getLink();
+    }
+
+    private boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
 
     public TasteMapDto add(TasteMapDto dto){
         ensureNotDuplicate(dto);
