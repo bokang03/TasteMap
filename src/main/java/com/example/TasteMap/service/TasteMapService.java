@@ -2,7 +2,6 @@ package com.example.TasteMap.service;
 
 import com.example.TasteMap.api.NaverClient;
 import com.example.TasteMap.api.dto.image.SearchImageRequest;
-import com.example.TasteMap.api.dto.image.SearchImageResponse;
 import com.example.TasteMap.api.dto.local.SearchLocalItem;
 import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalResponse;
@@ -25,27 +24,12 @@ public class TasteMapService {
     private final NaverClient naverClient;
     private final TasteMapRepository tasteMapRepository;
 
-    public List<TasteMapDto> search(String query, int startPage) {
+    public List<TasteMapDto> search(String query) {
         if (isBlank(query)) return java.util.List.of();
-        var results = runSearchWithPaging(query, startPage);
-        if (results.isEmpty()) throw new ResourceNotFoundException(ErrorMessage.NO_SEARCH_RESULT.getMessage());
-        return results;
-    }
-
-    private java.util.ArrayList<TasteMapDto> runSearchWithPaging(String q, int startPage) {
-        final int MAX = 100, PER = 5;
-        var results = new java.util.ArrayList<TasteMapDto>();
-        int page = Math.max(1, startPage);
-        while (results.size() < MAX) {
-            var req = buildLocalRequest(q, PER, page); var res = callLocalSearch(req);
-            if (noLocalResults(res)) break;
-            for (var item : res.getItems()) {
-                results.add(mapLocalToDto(item)); if (results.size() >= MAX) break;
-            }
-            if (res.getItems().size() < PER) break; if (results.size() >= res.getTotal()) break;
-            page++;
-        }
-        return results;
+        var req = buildLocalRequest(query, 10, 1);
+        var res = callLocalSearch(req);
+        if (noLocalResults(res)) throw new ResourceNotFoundException(ErrorMessage.NO_SEARCH_RESULT.getMessage());
+        return res.getItems().stream().map(this::mapLocalToDto).collect(Collectors.toList());
     }
 
     private SearchLocalRequest buildLocalRequest(String query, int per, int page) {

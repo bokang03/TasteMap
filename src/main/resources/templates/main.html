@@ -109,7 +109,6 @@
     </style>
 </head>
 <body>
-<!-- 상단 헤더(로고) -->
 <header class="site-header">
     <div class="container-fluid py-2 d-flex align-items-center">
         <div class="brand">
@@ -126,7 +125,7 @@
             <input id="searchBox" v-model="query" style="height:46px" class="form-control form-control-lg" type="text" placeholder="맛집을 검색해주세요.">
         </div>
         <div class="col-sm-6 col-md-4">
-            <button id="searchButton" type="button" class="btn btn-primary btn-lg" style="width:100%" @click="doSearch(1)">검색</button>
+            <button id="searchButton" type="button" class="btn btn-primary btn-lg" style="width:100%" @click="doSearch">검색</button>
         </div>
     </div>
 
@@ -146,21 +145,7 @@
         </div>
     </div>
 
-    <div class="pagination-wrap" v-if="searchVisible">
-        <nav aria-label="search pages">
-            <ul class="pagination justify-content-center">
-                <li class="page-item" :class="{disabled: currentPage===1}">
-                    <a class="page-link" href="#" @click.prevent="changePage(1)">«</a>
-                </li>
-                <li class="page-item" v-for="p in totalPages" :key="p" :class="{active: currentPage===p}">
-                    <a class="page-link" href="#" @click.prevent="changePage(p)">{{ p }}</a>
-                </li>
-                <li class="page-item" :class="{disabled: currentPage===totalPages}">
-                    <a class="page-link" href="#" @click.prevent="changePage(totalPages)">»</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
+    <!-- pagination-wrap 삭제됨 -->
 
     <br/><br/><br/>
 
@@ -205,35 +190,27 @@
         query: '',
         searchResults: [],
         searchVisible: false,
-        wishList: [],
-        currentPage: 1,
-        totalPages: 10
+        wishList: []
       },
       methods: {
         stripTags: function (s) {
           if (!s) return '';
           return s.replace(/<[^>]*>/g, '');
         },
-        doSearch: function (page) {
+        doSearch: function () {
           var q = (this.query || '').trim();
           if (!q) return;
           var self = this;
-          var p = page || 1;
-          $.get('/taste-map/search', { query: q, page: p })
+          $.get('/taste-map/search', { query: q })
             .done(function (response) {
               self.searchResults = Array.isArray(response) ? response : (response ? [response] : []);
               self.searchVisible = self.searchResults.length > 0;
-              self.currentPage = p;
             })
             .fail(function (xhr, status, err) {
               console.error('검색 실패', status, err);
               self.searchResults = [];
               self.searchVisible = false;
             });
-        },
-        changePage: function (p) {
-          if (p < 1 || p > this.totalPages) return;
-          this.doSearch(p);
         },
         addWish: function (item) {
           var payload = item || {};

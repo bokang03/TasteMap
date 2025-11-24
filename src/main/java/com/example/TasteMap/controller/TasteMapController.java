@@ -27,7 +27,7 @@ public class TasteMapController {
 
     @GetMapping("/search")
     public List<TasteMapDto> search(@RequestParam String query, @RequestParam(required = false, defaultValue = "1") int page){
-        return tasteMapService.search(query, page);
+        return tasteMapService.search(query);
     }
 
     @PostMapping

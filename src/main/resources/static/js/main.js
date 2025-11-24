@@ -90,7 +90,6 @@
         search_result.addWish();
     });
 
-    // 초기 로드 시 위시리스트 가져오기
     $(document).ready(function () {
         getWishList();
         $('#search-result').hide();
