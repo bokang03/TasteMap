@@ -1,14 +1,20 @@
 package com.example.TasteMap.domain;
 
-import com.example.TasteMap.db.MemoryDbEntity;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = true)
-public class TasteMapEntity extends MemoryDbEntity {
+@Entity
+@Table(name = "taste_map")
+public class TasteMapEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     private String title;
     private String category;
     private String address;
