@@ -14,11 +14,6 @@ public class SearchLocalRequest {
     private int start = 1;
     private String sort = "random";
 
-    public void setPage(int page) {
-        if (page < 1) page = 1;
-        this.start = (page - 1) * this.display + 1;
-    }
-
     public MultiValueMap<String, String> getQuery() {
         var map = new LinkedMultiValueMap<String, String>();
         map.add("query", query);

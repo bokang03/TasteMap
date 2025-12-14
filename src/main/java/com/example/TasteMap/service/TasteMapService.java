@@ -36,7 +36,6 @@ public class TasteMapService {
         var req = new SearchLocalRequest();
         req.setQuery(query);
         req.setDisplay(per);
-        req.setPage(page);
         return req;
     }
 
