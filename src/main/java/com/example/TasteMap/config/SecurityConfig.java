@@ -20,9 +20,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",
                                 "/webjars/**",
+                                "/",
+                                "/js/**",
                                 "/taste-map/**",
-                                "/pages/main/**",
-                                "/**"
+                                "/pages/main/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
