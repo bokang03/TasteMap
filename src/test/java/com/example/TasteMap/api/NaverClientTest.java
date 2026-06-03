@@ -3,30 +3,38 @@ package com.example.TasteMap.api;
 import com.example.TasteMap.api.dto.image.SearchImageRequest;
 import com.example.TasteMap.api.dto.local.SearchLocalRequest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+import static org.assertj.core.api.Assertions.assertThat;
+
 class NaverClientTest {
 
-    @Autowired
-    private NaverClient naverClient;
-
     @Test
-    public void searchLocalTest() {
+    void searchLocalRequestContainsExpectedQueryParams() {
         var search = new SearchLocalRequest();
-        search.setQuery("감자탕");
+        search.setQuery("gamjatang");
+        search.setDisplay(10);
+        search.setStart(2);
 
-        var result = naverClient.searchLocal(search);
-        System.out.println("검색 결과 : " + result);
+        var query = search.getQuery();
+
+        assertThat(query.getFirst("query")).isEqualTo("gamjatang");
+        assertThat(query.getFirst("display")).isEqualTo("10");
+        assertThat(query.getFirst("start")).isEqualTo("2");
+        assertThat(query.getFirst("sort")).isEqualTo("random");
     }
 
     @Test
-    public void searchImageTest() {
+    void searchImageRequestContainsExpectedQueryParams() {
         var search = new SearchImageRequest();
-        search.setQuery("감자탕");
+        search.setQuery("gamjatang");
+        search.setDisplay(1);
 
-        var result = naverClient.searchImage(search);
-        System.out.println(result);
+        var query = search.getQuery();
+
+        assertThat(query.getFirst("query")).isEqualTo("gamjatang");
+        assertThat(query.getFirst("display")).isEqualTo("1");
+        assertThat(query.getFirst("start")).isEqualTo("1");
+        assertThat(query.getFirst("sort")).isEqualTo("sim");
+        assertThat(query.getFirst("filter")).isEqualTo("all");
     }
 }
